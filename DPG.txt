@@ -1,0 +1,219 @@
+2pg
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+int stack[100], top = -1;
+
+void push(int val) { stack[++top] = val; }
+int pop() { return stack[top--]; }
+
+int evalPostfix(char *exp) {
+    char *t = strtok(exp, " ");
+    while (t) {
+        if (isdigit(t[0]) || (t[0] == '-' && isdigit(t[1])))
+            push(atoi(t));
+        else {
+            int b = pop(), a = pop();
+            switch (t[0]) {
+                case '+': push(a + b); break;
+                case '-': push(a - b); break;
+                case '*': push(a * b); break;
+                case '/':
+                    if (b == 0) { printf("Error: Division by zero\n"); exit(1); }
+                    push(a / b); break;
+                default: printf("Invalid operator\n"); exit(1);
+            }
+        }
+        t = strtok(NULL, " ");
+    }
+    return pop();
+}
+
+int main() {
+    char exp[100];
+    printf("Enter postfix expression: ");
+    fgets(exp, sizeof(exp), stdin);
+    exp[strcspn(exp, "\n")] = 0;
+
+    printf("Result = %d\n", evalPostfix(exp));
+    return 0;
+}
+
+--------------------------------------------------------------
+
+6pg
+#include <stdio.h>
+
+void bubbleSort(int a[], int n) {
+    for (int i = 0; i < n - 1; i++)
+        for (int j = 0; j < n - i - 1; j++)
+            if (a[j] > a[j + 1]) {
+                int t = a[j]; a[j] = a[j + 1]; a[j + 1] = t;
+            }
+    printf("Sorted (Bubble Ascending):\n");
+    for (int i = 0; i < n; i++) printf("%d\n", a[i]);
+}
+
+void selectionSort(int a[], int n) {
+    for (int i = 0; i < n - 1; i++) {
+        int max = i;
+        for (int j = i + 1; j < n; j++)
+            if (a[j] > a[max]) max = j;
+        if (max != i) {
+            int t = a[i]; a[i] = a[max]; a[max] = t;
+        }
+    }
+    printf("Sorted (Selection Descending):\n");
+    for (int i = 0; i < n; i++) printf("%d\n", a[i]);
+}
+
+int main() {
+    int a[50], n, ch;
+    char ans;
+    do {
+        printf("1. Bubble Sort\n2. Selection Sort\n3. Exit\nChoice: ");
+        scanf("%d", &ch);
+        if (ch == 3) break;
+        printf("How many elements: ");
+        scanf("%d", &n);
+        printf("Enter elements:\n");
+        for (int i = 0; i < n; i++) scanf("%d", &a[i]);
+
+        if (ch == 1) bubbleSort(a, n);
+        else if (ch == 2) selectionSort(a, n);
+        else printf("Invalid choice\n");
+
+        printf("Continue? (y/N): ");
+        scanf(" %c", &ans);
+    } while (ans == 'y' || ans == 'Y');
+    return 0;
+}
+
+-------------------------------------------------------------------------------------
+7pg
+
+#include <stdio.h>
+#include <stdlib.h>
+
+int parent[100];
+
+// Find with path compression
+int find(int u) {
+    if (parent[u] == u)
+        return u;
+    return parent[u] = find(parent[u]);
+}
+
+// Union operation
+void unionSet(int u, int v) {
+    parent[find(v)] = find(u);
+}
+
+// Comparator for sorting by weight
+int cmp(const void* a, const void* b) {
+    return ((int*)a)[2] - ((int*)b)[2];
+}
+
+int main() {
+    int vertices = 4;
+    int edges[][3] = {
+        {0, 1, 10},
+        {0, 2, 6},
+        {0, 3, 5},
+        {1, 3, 15},
+        {2, 3, 4}
+    };
+    int edgeCount = sizeof(edges) / sizeof(edges[0]);
+
+    for (int i = 0; i < vertices; i++)
+        parent[i] = i;
+
+    qsort(edges, edgeCount, sizeof(edges[0]), cmp);
+
+    int cost = 0;
+    printf("Following are the edges in the constructed MST:\n");
+
+    for (int i = 0; i < edgeCount; i++) {
+        int u = edges[i][0], v = edges[i][1], w = edges[i][2];
+        if (find(u) != find(v)) {
+            unionSet(u, v);
+            cost += w;
+            printf("%d -- %d == %d\n", u, v, w);
+        }
+    }
+
+    printf("Minimum cost Spanning Tree: %d\n", cost);
+    return 0;
+}
+
+---------------------------------------------------------------------------
+
+pg8
+
+done
+#include <stdio.h>
+#include <limits.h>
+
+#define V 9
+
+int minDistance(int dist[], int sptSet[]) {
+    int min = INT_MAX, min_index;
+
+    for (int v = 0; v < V; v++)
+        if (!sptSet[v] && dist[v] <= min)
+            min = dist[v], min_index = v;
+
+    return min_index;
+}
+
+void printSolution(int dist[]) {
+    printf("Vertex   Distance from Source\n");
+    for (int i = 0; i < V; i++)
+        printf("%d \t\t %d\n", i, dist[i]);
+}
+
+void dijkstra(int graph[V][V], int src) {
+    int dist[V];
+    int sptSet[V];
+
+    for (int i = 0; i < V; i++) {
+        dist[i] = INT_MAX;
+        sptSet[i] = 0;
+    }
+
+    dist[src] = 0;
+
+    for (int count = 0; count < V - 1; count++) {
+        int u = minDistance(dist, sptSet);
+        sptSet[u] = 1;
+
+        for (int v = 0; v < V; v++)
+            if (!sptSet[v] && graph[u][v] &&
+                dist[u] != INT_MAX &&
+                dist[u] + graph[u][v] < dist[v])
+                dist[v] = dist[u] + graph[u][v];
+    }
+
+    printSolution(dist);
+}
+
+int main() {
+    int graph[V][V] = {
+        {0, 4, 0, 0, 0, 0, 0, 8, 0},
+        {4, 0, 8, 0, 0, 0, 0, 11, 0},
+        {0, 8, 0, 7, 0, 4, 0, 0, 2},
+        {0, 0, 7, 0, 9, 14, 0, 0, 0},
+        {0, 0, 0, 9, 0, 10, 0, 0, 0},
+        {0, 0, 4, 0, 10, 0, 2, 0, 0},
+        {0, 0, 0, 14, 0, 2, 0, 1, 6},
+        {8, 11, 0, 0, 0, 0, 1, 0, 7},
+        {0, 0, 2, 0, 0, 0, 6, 7, 0}
+    };
+
+    dijkstra(graph, 0);
+
+    return 0;
+}
+
